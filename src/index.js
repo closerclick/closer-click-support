@@ -439,9 +439,32 @@ const STYLE = `
   .discord-ico svg { width: 100%; height: 100%; display: block; }
 `
 
+/* ─── Contador de aperturas (cross-app, vía store.closer.click) ───────────────
+   Como <closer-click-support> está montado en CUALQUIER app del ecosistema, al
+   cargar registra su propia apertura en el store COMPARTIDO; el hub closer.click
+   lee el agregado para su tab "Recientes". Así el conteo funciona incluso con
+   acceso directo al subdominio (no solo al abrir desde el hub). 100% local al
+   navegador: sin servidor, sin terceros, sin cookies.
+
+   - appId = atributo `app` o, por defecto, el hostname (p. ej. "mundial.closer.click").
+   - `no-count` desactiva el registro en esa instancia.
+   - Import DINÁMICO con try/catch del store: en apps con bundler (Vite, la norma)
+     resuelve y cuenta; cargado como vanilla por CDN (donde el especificador
+     desnudo no resuelve) o sin store disponible, degrada en silencio SIN romper
+     la UI de soporte. Una sola vez por appId por carga de página. */
+const _openRecorded = new Set()
+function recordAppOpen(appId) {
+  if (!appId || _openRecorded.has(appId)) return
+  _openRecorded.add(appId)
+  import('@closerclick/closer-click-store')
+    .then((mod) => mod.Store.connect())
+    .then((store) => store.recordOpen(appId))
+    .catch(() => { /* store no disponible (carga vanilla por CDN, offline…): best-effort */ })
+}
+
 class CloserClickSupport extends HTMLElement {
   static get observedAttributes() {
-    return ['href', 'links', 'cta', 'no-trigger', 'heading', 'message', 'lang', 'variant', 'inline', 'hint', 'coin', 'no-bubble', 'bubble-timeout', 'share-url', 'share-text', 'no-share', 'repo', 'bug-href', 'discord']
+    return ['href', 'links', 'cta', 'no-trigger', 'heading', 'message', 'lang', 'variant', 'inline', 'hint', 'coin', 'no-bubble', 'bubble-timeout', 'share-url', 'share-text', 'no-share', 'repo', 'bug-href', 'discord', 'app', 'no-count']
   }
 
   constructor() {
@@ -457,6 +480,10 @@ class CloserClickSupport extends HTMLElement {
 
   connectedCallback() {
     this._render()
+    // Registra la apertura de esta app en el store compartido (best-effort).
+    if (!this.hasAttribute('no-count')) {
+      recordAppOpen(this.getAttribute('app') || location.hostname)
+    }
   }
 
   disconnectedCallback() {

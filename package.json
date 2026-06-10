@@ -1,6 +1,6 @@
 {
   "name": "@closerclick/closer-click-support",
-  "version": "0.3.9",
+  "version": "0.4.0",
   "description": "Web Component (custom element) de modal de soporte/donaciones reutilizable por cualquier app del ecosistema Closer Click. Autohosteado, sin JS de terceros ni cookies.",
   "type": "module",
   "main": "src/index.js",
@@ -28,6 +28,9 @@
   ],
   "author": "seyacat",
   "license": "MIT",
+  "dependencies": {
+    "@closerclick/closer-click-store": "^0.4.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/closerclick/closer-click-support.git"

@@ -16,6 +16,15 @@ export interface SupportLink {
  * Atributo `discord` (opcional): URL de invitación a Discord (p. ej.
  * "https://discord.gg/xxxx"). Si está presente, el modal muestra una sección
  * de comunidad con un enlace a Discord.
+ *
+ * Contador de aperturas (cross-app): al montarse registra la apertura de la app
+ * en el store compartido (`store.closer.click`), que el hub `closer.click` usa
+ * para su tab "Recientes". 100% local al navegador, sin servidor ni terceros.
+ *   - `app`: id de la app a contar (default: `location.hostname`).
+ *   - `no-count`: si está presente, no registra la apertura.
+ * El registro es best-effort vía import dinámico del store: si no hay bundler
+ * (carga vanilla por CDN) o el store no está disponible, no cuenta pero tampoco
+ * rompe la UI de soporte.
  */
 export declare class CloserClickSupport extends HTMLElement {
   /** Abre el modal y emite 'cc-support-open'. */
