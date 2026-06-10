@@ -448,18 +448,29 @@ const STYLE = `
 
    - appId = atributo `app` o, por defecto, el hostname (p. ej. "mundial.closer.click").
    - `no-count` desactiva el registro en esa instancia.
-   - Import DINÁMICO con try/catch del store: en apps con bundler (Vite, la norma)
-     resuelve y cuenta; cargado como vanilla por CDN (donde el especificador
-     desnudo no resuelve) o sin store disponible, degrada en silencio SIN romper
-     la UI de soporte. Una sola vez por appId por carga de página. */
+   - Carga del store con import DINÁMICO: en apps con bundler (Vite, la norma)
+     resuelve el especificador del paquete; en apps que cargan support por CDN
+     (jsDelivr) el especificador desnudo no resuelve, así que cae al store por
+     jsDelivr (ver _loadStore). Si el store no está disponible (offline…) degrada
+     en silencio SIN romper la UI. Una sola vez por appId por carga de página. */
 const _openRecorded = new Set()
+// Fallback CDN para cargar el store cuando NO hay bundler (apps que cargan este
+// componente por jsDelivr): el especificador desnudo no resuelve en el navegador,
+// así que caemos al mismo paquete servido por jsDelivr. En apps con bundler el
+// primer import resuelve y nunca se usa el fallback (@vite-ignore evita que el
+// bundler intente analizar la URL).
+const _STORE_CDN = 'https://cdn.jsdelivr.net/npm/@closerclick/closer-click-store@0.4/src/index.js'
+async function _loadStore() {
+  try { return await import('@closerclick/closer-click-store') }
+  catch { return await import(/* @vite-ignore */ _STORE_CDN) }
+}
 function recordAppOpen(appId) {
   if (!appId || _openRecorded.has(appId)) return
   _openRecorded.add(appId)
-  import('@closerclick/closer-click-store')
+  _loadStore()
     .then((mod) => mod.Store.connect())
     .then((store) => store.recordOpen(appId))
-    .catch(() => { /* store no disponible (carga vanilla por CDN, offline…): best-effort */ })
+    .catch(() => { /* store no disponible (offline, bloqueado…): best-effort */ })
 }
 
 class CloserClickSupport extends HTMLElement {
